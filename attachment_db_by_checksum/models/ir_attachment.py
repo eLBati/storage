@@ -72,5 +72,19 @@ class Attachment(models.Model):
                     "mimetype": attach.mimetype,
                 })
             return True
+        elif location == "file":
+            # Handling the transfer from hashed_db to file.
+            # We can't run super because searching with [('db_datas', '!=', False)]
+            # returns 0 attachments,
+            # so we run for every attachment
+            attachments = self.env["ir.attachment"].search([])
+            for attach_id in attachments.ids:
+                attach = self.browse(attach_id)
+                self.env['ir.config_parameter'].sudo().set_param(
+                    'ir_attachment.location', 'hashed_db')
+                datas = attach.datas
+                self.env['ir.config_parameter'].sudo().set_param(
+                    'ir_attachment.location', 'file')
+                attach.write({'datas': datas})
         else:
             return super(Attachment, self).force_storage()
